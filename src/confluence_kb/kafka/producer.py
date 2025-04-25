@@ -13,6 +13,9 @@ class KafkaProducer:
     def __init__(self, bootstrap_servers: Optional[str] = None):
         if bootstrap_servers is None:
             bootstrap_servers = config.kafka.bootstrap_servers
+
+        if isinstance(bootstrap_servers, list):
+            bootstrap_servers = ",".join(bootstrap_servers) 
             
         self.producer = Producer({"bootstrap.servers": bootstrap_servers})
         logger.info(f"Initialized Kafka producer with bootstrap servers: {bootstrap_servers}")

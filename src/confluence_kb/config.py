@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
@@ -17,7 +17,7 @@ class ConfluenceConfig(BaseSettings):
 
 
 class KafkaConfig(BaseSettings):
-    bootstrap_servers: List[str] = Field("localhost:9092", description="Kafka bootstrap servers")
+    bootstrap_servers: Annotated[List[str], NoDecode] = Field("localhost:9092", description="Kafka bootstrap servers")
     raw_topic: str = Field("raw-confluence-data", description="Raw data topic")
     processed_topic: str = Field("processed-text", description="Processed text topic")
     chunks_topic: str = Field("text-chunks", description="Text chunks topic")
@@ -25,6 +25,21 @@ class KafkaConfig(BaseSettings):
     version_topic: str = Field("version-metadata", description="Version metadata topic")
 
     model_config = SettingsConfigDict(env_prefix="KAFKA_")
+    
+    @field_validator('bootstrap_servers', mode='before')
+    @classmethod
+    def parse_bootstrap_servers(cls, v):
+        if isinstance(v, str):
+            if v.startswith('[') and v.endswith(']'):
+                v = v[1:-1]
+            
+            servers = []
+            for server in v.split(','):
+                server = server.strip().strip("'").strip('"').strip()
+                if server:  
+                    servers.append(server)
+            return servers
+        return v
 
 
 class FlinkConfig(BaseSettings):

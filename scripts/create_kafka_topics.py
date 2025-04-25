@@ -24,7 +24,12 @@ console = Console()
 
 def create_topics():
     try:
-        admin_client = AdminClient({"bootstrap.servers": config.kafka.bootstrap_servers})
+        bootstrap_servers = config.kafka.bootstrap_servers
+        if isinstance(bootstrap_servers, list):
+            bootstrap_servers = ",".join(bootstrap_servers)
+        
+        console.print(f"[blue]Using bootstrap servers: {bootstrap_servers}[/]")
+        admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
 
         topics = [
             NewTopic(
